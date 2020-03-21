@@ -2,11 +2,16 @@
 #include "hara/Input.h"
 #include "hara/Output.h"
 
+/**
+ * cat [filename1 filename2 ...]
+ * If filename is provided, read each file line by line and redirect to stdout
+ * If no argument is provided, read from stdin line by line and redirect to stdout
+ */
 int main(int argc, const char** argv) {
-    hara::Output output{"-"}; // std
+    hara::Output output{"-"}; // "-" means stdout
     if (argc == 1) {
-        // read from std and write out to std line by line
-        hara::Input input{"-"};
+        // read from stdin and write out to stdout line by line
+        hara::Input input{"-"}; // "-" means stdin
         std::string line;
         while (input.GetLine(line))
             output << line << std::endl;
