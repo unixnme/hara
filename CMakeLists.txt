@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
-project(hara)
+project(include/hara)
 
 set(CMAKE_CXX_STANDARD 11)
 
-include_directories(.)
-
-add_subdirectory(examples)
+add_library(hara INTERFACE)
+target_include_directories(hara INTERFACE include)
+target_sources(hara INTERFACE
+        include/hara/Input.h
+        include/hara/Output.h)
