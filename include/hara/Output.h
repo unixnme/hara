@@ -20,9 +20,14 @@ public:
     explicit Output(const std::string &path) {
         std::ios::sync_with_stdio(false);
         if (path == "-") {
-            // write to stdout
+#ifdef HARA_VERBOSE
+            std::cerr << "Writing to stdout" << std::endl;
+#endif
             buf = std::cout.rdbuf();
         } else {
+#ifdef HARA_VERBOSE
+            std::cerr << "Writing to " << path << std::endl;
+#endif
             ofs = std::unique_ptr<std::ofstream>{new std::ofstream{path}};
             if (!ofs->is_open())
                 throw std::runtime_error("Cannot write to " + path);
