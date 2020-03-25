@@ -81,5 +81,4 @@ private:
 
 }
 
-
 #endif //IO_INPUT_H

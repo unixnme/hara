@@ -7,4 +7,5 @@ add_library(hara INTERFACE)
 target_include_directories(hara INTERFACE include)
 target_sources(hara INTERFACE
         include/hara/Input.h
-        include/hara/Output.h)
+        include/hara/Output.h
+        include/hara/String.h)
