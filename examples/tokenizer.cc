@@ -1,6 +1,5 @@
 #include <iostream>
 #include "hara/Input.h"
-#include "hara/Output.h"
 #include "hara/String.h"
 
 

@@ -13,3 +13,6 @@ target_link_libraries(cat hara)
 
 add_executable(tokenize tokenizer.cc)
 target_link_libraries(tokenize hara)
+
+add_executable(everyline everyline.cc)
+target_link_libraries(everyline hara)

@@ -22,6 +22,17 @@ public:
         if (begin != input.end()) result.emplace_back(begin, input.end());
         return result;
     }
+
+    template<typename Container = std::vector<std::string>>
+    static std::string Join(const Container &tokens, const std::string &separator = " ") {
+        std::string joined;
+        for (auto it = tokens.begin(); it != tokens.end(); ++it) {
+            if (it != tokens.begin())
+                joined.append(separator);
+            joined.append(*it);
+        }
+        return joined;
+    }
 };
 
 }
