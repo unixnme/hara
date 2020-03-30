@@ -20,7 +20,6 @@ void tokenize(hara::Input &input) {
  * If no argument is provided, read from stdin line by line, tokenize, and redirect to stdout
  */
 int main(int argc, const char** argv) {
-    hara::Output output{"-"}; // "-" means stdout
     if (argc == 1) {
         // read from stdin and write out to stdout line by line
         hara::Input input{"-"}; // "-" means stdin

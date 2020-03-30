@@ -62,7 +62,7 @@ public:
     std::string Read() {
         std::string content;
         std::string line;
-        while (std::getline(*in, line))
+        while (GetLine(line))
             content += line + "\n";
         return content;
     }
