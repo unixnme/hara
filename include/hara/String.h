@@ -14,7 +14,7 @@ public:
         auto begin = input.begin();
         for (auto end = input.begin(); end != input.end(); ++end) {
             const auto c = *end;
-            if (c == ' ' || c == '\n' || c == '\t') {
+            if (std::isspace(c)) {
                 if (begin != end) result.emplace_back(begin, end);
                 begin = end + 1;
             }
