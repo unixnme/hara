@@ -9,12 +9,12 @@
 
 namespace hara {
 
-    /** Minimalistic input-handling class
-     * that could be from a file or piped stdin
-     *
-     * Only support forward reading methods
-     *
-     */
+/** Minimalistic input-handling class
+ * that could be from a file or piped stdin
+ *
+ * Only support forward reading methods
+ *
+ */
 class Input {
 public:
     explicit Input(const std::string &path) {
@@ -36,12 +36,12 @@ public:
         in = std::unique_ptr<std::istream>{new std::istream{buf}};
     }
 
-    explicit Input(const char* path) : Input{std::string{path}} {}
+    explicit Input(const char *path) : Input{std::string{path}} {}
 
     /**
      * Get current line; does not return endl char
      */
-    Input& GetLine(std::string &line) {
+    Input &GetLine(std::string &line) {
         static const size_t LOG_NUM_LINES = 1000000;
         static size_t n = 0;
         std::getline(*in, line);
@@ -68,7 +68,7 @@ public:
     }
 
     template<typename T>
-    Input& operator>>(T& data) {
+    Input &operator>>(T &data) {
         *in >> data;
         return *this;
     }

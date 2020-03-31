@@ -36,7 +36,7 @@ public:
         out = std::unique_ptr<std::ostream>{new std::ostream{buf}};
     }
 
-    explicit Output(const char* path) : Output{std::string{path}} {}
+    explicit Output(const char *path) : Output{std::string{path}} {}
 
     /**
      * write the line + endl char
@@ -50,13 +50,13 @@ public:
         *out << content;
     }
 
-    template <typename T>
-    Output& operator<<(const T& data) {
+    template<typename T>
+    Output &operator<<(const T &data) {
         *out << data;
         return *this;
     }
 
-    Output& operator<<(std::ostream& (*manip)(std::ostream&)) {
+    Output &operator<<(std::ostream &(*manip)(std::ostream &)) {
         *out << manip;
         return *this;
     }
