@@ -16,3 +16,6 @@ target_link_libraries(tokenize hara)
 
 add_executable(everyline everyline.cc)
 target_link_libraries(everyline hara)
+
+add_executable(count count.cc)
+target_link_libraries(count hara)

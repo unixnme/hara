@@ -17,7 +17,7 @@ namespace hara {
  */
 class Output {
 public:
-    explicit Output(const std::string &path) {
+    explicit Output(const std::string &path, std::ios_base::openmode mode = std::ios_base::out) {
         std::ios::sync_with_stdio(false);
         if (path == "-") {
 #ifdef HARA_VERBOSE
@@ -28,7 +28,7 @@ public:
 #ifdef HARA_VERBOSE
             std::cerr << "Writing to " << path << std::endl;
 #endif
-            ofs = std::unique_ptr<std::ofstream>{new std::ofstream{path}};
+            ofs = std::unique_ptr<std::ofstream>{new std::ofstream{path, mode}};
             if (!ofs->is_open())
                 throw std::runtime_error("Cannot write to " + path);
             buf = ofs->rdbuf();
@@ -36,7 +36,8 @@ public:
         out = std::unique_ptr<std::ostream>{new std::ostream{buf}};
     }
 
-    explicit Output(const char *path) : Output{std::string{path}} {}
+    explicit Output(const char *path, std::ios_base::openmode mode = std::ios_base::out)
+            : Output{std::string{path}, mode} {}
 
     /**
      * write the line + endl char
