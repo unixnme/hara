@@ -90,11 +90,11 @@ int main(int argc, const char** argv) {
     }
 
     long long int duration;
-    hara::PriorityQueue<hara::PriorityQueueImpl1<std::string, int>> pqueue1;
+    hara::PriorityQueue1<std::string, int> pqueue1;
     auto result1 = PerformOperations(pqueue1, ops, duration);
     std::cout << "Impl1: " << duration << "ms" << std::endl;
 
-    hara::PriorityQueue<hara::PriorityQueueImpl2<std::string, int>> pqueue2;
+    hara::PriorityQueue2<std::string, int> pqueue2;
     auto result2 = PerformOperations(pqueue2, ops, duration);
     std::cout << "Impl2: " << duration << "ms" << std::endl;
 

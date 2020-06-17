@@ -303,6 +303,12 @@ private:
     std::map<K, V> valid;
 };
 
+template<typename K, typename V, typename C = std::less<V>>
+using PriorityQueue1 = PriorityQueue<PriorityQueueImpl1<K, V, C>>;
+
+template<typename K, typename V, typename C = std::less<V>>
+using PriorityQueue2 = PriorityQueue<PriorityQueueImpl2<K, V, C>>;
+
 }
 
 #endif //HARA_PRIORITY_QUEUE_H
