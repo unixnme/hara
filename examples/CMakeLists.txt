@@ -22,3 +22,6 @@ target_link_libraries(count hara)
 
 add_executable(pqueue_performance pqueue_performance.cc)
 target_link_libraries(pqueue_performance hara)
+
+add_executable(lpm lpm.cc)
+target_link_libraries(lpm hara)

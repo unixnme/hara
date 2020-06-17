@@ -2,6 +2,7 @@
 #define HARA_PREFIX_TREE_H
 
 #include <vector>
+#include "Macros.h"
 
 namespace hara {
 
@@ -87,7 +88,7 @@ private:
 
     PrefixNode *Find(const Key &key) const {
         for (auto child : children_) {
-            if (child->key == key) return child;
+            if (child->key_ == key) return child;
         }
         return nullptr;
     }
@@ -197,26 +198,30 @@ public:
     }
 
     size_t Size() const {
-        Check();
-        return addr_->Size();
+        return Empty() ? 0 : addr_->Size();
     }
 
     bool Empty() const {
-        Check();
-        return addr_->Empty();
+        return addr_ == nullptr || addr_->Empty();
     }
 
-    bool operator==(const PrefixLeaf &other) const { return addr_ == other.addr_; }
+    bool operator==(const PrefixLeaf &other) const {
+        Check();
+        return addr_ == other.addr_;
+    }
 
-    bool operator!=(const PrefixLeaf &other) const { return !this->operator==(other); }
+    bool operator!=(const PrefixLeaf &other) const {
+        Check();
+        return !this->operator==(other);
+    }
 
 private:
     explicit PrefixLeaf(PrefixNode<Key, Object> *addr)
-            : addr_{addr && addr->data_ ? addr : nullptr} {
+            : addr_{addr && !addr->Empty() ? addr : nullptr} {
     }
 
     inline void Check() const {
-        ASSERT(addr_ == nullptr, "Error: action cannot be performed on an empty leaf");
+        ASSERT(addr_ != nullptr, "Error: action cannot be performed on an empty leaf");
     }
 
     PrefixNode<Key, Object> *addr_;
@@ -246,7 +251,7 @@ public:
         std::vector<PrefixNode<Key, Object> *> nodes;
         nodes.reserve(Size());
         root_.AppendLeafs(nodes);
-        assert(nodes.size() == Size());
+        ASSERT(nodes.size() == Size(), "Node sizes equal");
 
         std::vector<leaf> leafs;
         leafs.reserve(nodes.size());
