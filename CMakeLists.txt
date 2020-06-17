@@ -8,4 +8,6 @@ target_include_directories(hara INTERFACE include)
 target_sources(hara INTERFACE
         include/hara/Input.h
         include/hara/Output.h
-        include/hara/String.h)
+        include/hara/String.h
+        include/hara/PriorityQueue.h
+        include/hara/Macros.h)
