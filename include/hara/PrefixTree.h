@@ -113,7 +113,7 @@ private:
         }
         if (count == 0) return;
         for (auto child : children_) {
-            child->appendLeafs(leafs);
+            child->AppendLeafs(leafs);
         }
     }
 
