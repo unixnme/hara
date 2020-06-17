@@ -10,4 +10,5 @@ target_sources(hara INTERFACE
         include/hara/Output.h
         include/hara/String.h
         include/hara/PriorityQueue.h
-        include/hara/Macros.h)
+        include/hara/Macros.h
+        include/hara/PrefixTree.h)
