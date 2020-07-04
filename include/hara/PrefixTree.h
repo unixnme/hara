@@ -1,277 +1,233 @@
-#ifndef HARA_PREFIX_TREE_H
-#define HARA_PREFIX_TREE_H
+#ifndef HARA_PREFIXTREE_H
+#define HARA_PREFIXTREE_H
 
 #include <vector>
+#include <map>
+#include <queue>
 #include "Macros.h"
 
 namespace hara {
 
-template<typename Key, typename Object>
+template<typename Key, typename Value>
+class PrefixNode;
+
+template<typename Key, typename Value>
 class PrefixTree;
 
-template<typename Key, typename Object>
-class PrefixLeaf;
+/**
+ * wrapper around node pointer
+ */
+template<typename Key, typename Value>
+class PrefixLeaf {
+public:
+    // no copies allowed
+    PrefixLeaf(const PrefixLeaf &) = delete;
 
-template<typename Key, typename Object>
-class PrefixNode {
+    PrefixLeaf &operator=(const PrefixLeaf &) = delete;
+
+    // move constructor allowed
+    // any subsequent method call will result in segfault
+    PrefixLeaf(PrefixLeaf &&that) noexcept: node{that.node} {
+        that.node = nullptr;
+    }
+
+    // move operator not allowed
+    PrefixLeaf &operator=(PrefixLeaf &&) noexcept = default;
+
+    std::vector<Key> Prefix() const { return node->Prefix(); }
+
+    const Value &Data() const { return node->Data(); }
+
+    Value &Data() { return node->Data(); }
+
+    size_t Size() const { return node->Size(); }
+
 private:
-    explicit PrefixNode(PrefixNode *parent, const Key &key)
-            : parent_{parent}, key_{key}, data_{nullptr}, num_leafs_{0} {
-    }
+    explicit PrefixLeaf(PrefixNode<Key, Value> &node) : node{&node} {}
 
+    PrefixNode<Key, Value> *node;
+
+    friend class PrefixTree<Key, Value>;
+
+    friend class PrefixNode<Key, Value>;
+};
+
+/**
+ * Actual implementation of PrefixTree
+ * @tparam Key
+ * @tparam Value
+ */
+template<typename Key, typename Value>
+class PrefixNode {
+public:
     ~PrefixNode() {
-        delete data_;
-        for (auto child : children_)
-            delete child;
+        delete data;
     }
 
-    size_t Size() const { return num_leafs_; }
+    std::vector<Key> Prefix() const {
+        std::vector<Key> prefix;
+        auto node = this;
+        while (!node->IsRoot()) {
+            prefix.push_back(node->key);
+            node = node->parent;
+        }
+        std::reverse(prefix.begin(), prefix.end());
+        return prefix;
+    }
+
+    /**
+     * Return all leafs
+     */
+    std::vector<PrefixLeaf<Key, Value>> FindAll(const std::vector<Key> &keys) {
+        if (Empty()) return {};
+        auto node = Find(keys);
+        if (!node) return {};
+
+        std::vector<PrefixLeaf<Key, Value>> leafs;
+        std::queue<PrefixNode *> queue;
+        queue.push(node);
+        while (!queue.empty()) {
+            node = queue.front();
+            queue.pop();
+
+            if (node->data) leafs.push_back(std::move(PrefixLeaf<Key, Value>{*node}));
+            for (auto &pair : node->children)
+                if (!pair.second.Empty()) queue.push(&pair.second);
+        }
+
+        return leafs;
+    }
+
+    bool Insert(const std::vector<Key> &keys, Value value) {
+        auto node = Find(keys, true);
+        if (node->data) return false;
+        node->data = new Value{std::move(value)};
+        while (node) {
+            ++node->num_leafs;
+            node = node->parent;
+        }
+        return true;
+    }
+
+    /**
+     * Remove the current leaf
+     */
+    void Erase() {
+        ASSERT(data != nullptr, "Not a leaf");
+        delete data;
+        data = nullptr;
+        auto node = this;
+        while (node) {
+            --node->num_leafs;
+            node = node->parent;
+        }
+    }
+
+    const Value &Data() const { return *data; }
+
+    Value &Data() { return *data; }
+
+    size_t Size() const { return num_leafs; }
 
     bool Empty() const { return Size() == 0; }
 
-    PrefixNode *End() const {
-        return nullptr;
-    }
+private:
+    // all constructors not allowed by client
+    PrefixNode() : parent{nullptr}, key{Key{}}, data{nullptr}, num_leafs{0} {}
 
-    PrefixNode *Insert(const std::vector<Key> &prefix, const Object &obj) {
+    explicit PrefixNode(PrefixNode *const parent, Key key)
+            : parent{parent}, key{std::move(key)}, data{nullptr}, num_leafs{0} {}
+
+    explicit PrefixNode(PrefixNode *const parent, Key key, Value value)
+            : parent{parent}, key{std::move(key)}, data{new Value{std::move(value)}}, num_leafs{1} {}
+
+    bool IsRoot() const { return parent == nullptr; }
+
+    /**
+     * Find the node relative to this by keys
+     * If create, construct node as you go
+     */
+    PrefixNode *Find(const std::vector<Key> &keys, bool create = false) {
         auto node = this;
-        for (auto key : prefix) {
-            auto child = node->Find(key);
-            if (child == nullptr) {
-                child = new PrefixNode{node, key};
-                node->children_.emplace_back(child);
+        for (auto &k : keys) {
+            auto it = node->children.find(k);
+            if (it == node->children.end()) {
+                if (create) it = node->children.emplace(k, PrefixNode{node, k}).first;
+                else return nullptr;
             }
-            node = child;
-        }
-        if (node->data_ == nullptr) {
-            // insert a new element
-            node->data_ = new Object{obj};
-            node->Increment();
-        } else {
-            // replace the existing element
-            *node->data_ = obj;
+            node = &it->second;
         }
         return node;
     }
 
-    void Remove() {
-        if (data_) Decrement();
-        delete data_;
-        data_ = nullptr;
-    }
+    PrefixNode *const parent;
+    const Key key;
+    std::map<Key, PrefixNode> children;
+    Value *data;
+    size_t num_leafs;
 
-    void Increment() {
-        auto ptr = this;
-        while (ptr != nullptr) {
-            ++ptr->num_leafs_;
-            ptr = ptr->parent_;
-        }
-    }
-
-    void Decrement() {
-        auto ptr = this;
-        while (ptr != nullptr) {
-            --ptr->num_leafs_;
-            ptr = ptr->parent_;
-        }
-    }
-
-    PrefixNode *Find(const std::vector<Key> &prefix) {
-        PrefixNode *child = this;
-        for (auto key: prefix) {
-            child = child->Find(key);
-            if (child == nullptr)
-                break;
-        }
-        return child;
-    }
-
-    PrefixNode *Find(const Key &key) const {
-        for (auto child : children_) {
-            if (child->key_ == key) return child;
-        }
-        return nullptr;
-    }
-
-    std::vector<Key> Prefix() const {
-        std::vector<Key> result;
-        const PrefixNode *node = this;
-        while (node->parent_ != nullptr) {
-            result.emplace_back(node->key_);
-            node = node->parent_;
-        }
-
-        std::reverse(result.begin(), result.end());
-        return result;
-    }
-
-    void AppendLeafs(std::vector<PrefixNode *> &leafs) {
-        auto count = this->num_leafs_;
-        if (data_ != nullptr) {
-            leafs.emplace_back(this);
-            --count;
-        }
-        if (count == 0) return;
-        for (auto child : children_) {
-            child->AppendLeafs(leafs);
-        }
-    }
-
-    Key key_;
-    Object *data_;
-    size_t num_leafs_;
-    PrefixNode *parent_;
-    std::vector<PrefixNode *> children_;
-
-    friend class PrefixLeaf<Key, Object>;
-
-    friend class PrefixTree<Key, Object>;
+    friend class PrefixTree<Key, Value>;
 };
 
-template<typename Key, typename Object>
-class PrefixLeaf {
+
+/**
+ * Wrapper around a PrefixNode as a root
+ * @tparam Key
+ * @tparam Value
+ */
+template<typename Key, typename Value>
+class PrefixTree {
 public:
-    PrefixLeaf Insert(const std::vector<Key> &prefix, const Object &obj) {
-        Check();
-        return PrefixLeaf{addr_->Insert(prefix, obj)};
-    }
-
-    PrefixLeaf Insert(const Key &key, const Object &obj) {
-        return Insert(std::vector<Key>{key}, obj);
-    }
-
-    PrefixLeaf Find(const std::vector<Key> &prefix) {
-        Check();
-        auto child = addr_->Find(prefix);
-        if (child && child->data_) {
-            return PrefixLeaf{child};
-        }
-        return PrefixLeaf{addr_->End()};
-    }
-
-    PrefixLeaf Find(const Key &key) {
-        return Find(std::vector<Key>{key});
-    }
-
-    std::vector<PrefixLeaf> FindAll() {
-        Check();
-        std::vector<PrefixNode<Key, Object> *> nodes;
-        nodes.reserve(Size());
-        addr_->AppendLeafs(nodes);
-        assert(nodes.size() == Size());
-
-        std::vector<PrefixLeaf> leafs;
-        leafs.reserve(Size());
-        for (size_t i = 0; i < nodes.size(); ++i)
-            leafs.emplace_back(PrefixLeaf{nodes[i]});
-        return leafs;
-    }
-
-    PrefixLeaf Parent() const {
-        Check();
-        PrefixNode<Key, Object> *node = addr_->parent_;
-        while (node != nullptr) {
-            if (node->data_ != nullptr)
-                return PrefixLeaf{node};
-            node = node->parent_;
-        }
-        return PrefixLeaf{addr_->End()};
+    /**
+     * Return all leafs
+     */
+    std::vector<PrefixLeaf<Key, Value>> FindAll(const std::vector<Key> &keys = {}) {
+        return root.FindAll(keys);
     }
 
     /**
-     * this call will invalidate this leaf
-     * any subsequent methods to the object will have undefined behavior
+     * Insert given value at the given keys
      */
-    void Remove() {
-        Check();
-        addr_->Remove();
+    bool Insert(const std::vector<Key> &keys, Value value) {
+        return root.Insert(keys, std::move(value));
     }
 
-    std::vector<Key> Prefix() const {
-        Check();
-        return addr_->Prefix();
+    /**
+     * Insert given value at the given keys relative to the leaf
+     * @return
+     */
+    bool Insert(PrefixLeaf<Key, Value> &leaf, const std::vector<Key> &keys, Value value) {
+        return leaf.node->Insert(keys, std::move(value));
     }
 
-    Object &Data() const {
-        Check();
-        return *addr_->data_;
+    /**
+     * Clear all leafs
+     */
+    void Clear() {
+        root.children.clear();
+        root.num_leafs = 0;
     }
 
-    size_t Size() const {
-        return Empty() ? 0 : addr_->Size();
+    /**
+     * Erase leaf & invalidate it
+     * any further usage of leaf will result in seg fault
+     */
+    void Erase(PrefixLeaf<Key, Value> &leaf) {
+        leaf.node->Erase();
+        leaf.node = nullptr;
     }
 
-    bool Empty() const {
-        return addr_ == nullptr || addr_->Empty();
-    }
+    /**
+     * number of leafs in the tree
+     */
+    size_t Size() const { return root.Size(); }
 
-    bool operator==(const PrefixLeaf &other) const {
-        Check();
-        return addr_ == other.addr_;
-    }
-
-    bool operator!=(const PrefixLeaf &other) const {
-        Check();
-        return !this->operator==(other);
-    }
+    bool Empty() const { return root.Empty(); }
 
 private:
-    explicit PrefixLeaf(PrefixNode<Key, Object> *addr)
-            : addr_{addr && !addr->Empty() ? addr : nullptr} {
-    }
-
-    inline void Check() const {
-        ASSERT(addr_ != nullptr, "Error: action cannot be performed on an empty leaf");
-    }
-
-    PrefixNode<Key, Object> *addr_;
-
-    friend class PrefixTree<Key, Object>;
-
-    friend class PrefixNode<Key, Object>;
-};
-
-template<typename Key, typename Object>
-class PrefixTree {
-public:
-    using leaf = PrefixLeaf<Key, Object>;
-
-    explicit PrefixTree() : root_{nullptr, Key()} {
-    }
-
-    leaf Insert(const std::vector<Key> &prefix, const Object &obj) {
-        return leaf{root_.Insert(prefix, obj)};
-    }
-
-    leaf Find(const std::vector<Key> &prefix) {
-        return leaf{root_.Find(prefix)};
-    }
-
-    std::vector<leaf> FindAll() {
-        std::vector<PrefixNode<Key, Object> *> nodes;
-        nodes.reserve(Size());
-        root_.AppendLeafs(nodes);
-        ASSERT(nodes.size() == Size(), "Node sizes equal");
-
-        std::vector<leaf> leafs;
-        leafs.reserve(nodes.size());
-        for (size_t i = 0; i < nodes.size(); ++i)
-            leafs.emplace_back(leaf{nodes[i]});
-        return leafs;
-    }
-
-    leaf End() const {
-        return leaf{root_.End()};
-    }
-
-    size_t Size() const { return root_.Size(); }
-
-    bool Empty() const { return root_.Empty(); }
-
-private:
-    PrefixNode<Key, Object> root_;
+    PrefixNode<Key, Value> root;
 };
 
 }
 
-#endif //HARA_PREFIX_TREE_H
+#endif //HARA_PREFIXTREE_H

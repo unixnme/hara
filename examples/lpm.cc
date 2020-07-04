@@ -39,8 +39,8 @@ int main(int argc, const char** argv) {
                 for (auto idx = 0; idx < token.size(); ++idx) {
                     auto c = token.at(idx);
                     unit.push_back(c);
-                    auto node = prefixTree.Find(unit);
-                    if (node.Empty()) {
+                    auto node = prefixTree.FindAll(unit);
+                    if (node.empty()) {
                         encoded.push_back(std::move(result));
                         result = "<unk>";
                         --idx;
