@@ -92,7 +92,7 @@ public:
 
             if (node->data) leafs.push_back(std::move(PrefixLeaf<Key, Value>{*node}));
             for (auto &pair : node->children)
-                if (!pair.second.Empty()) queue.push(&pair.second);
+                if (!pair.second->Empty()) queue.push(pair.second);
         }
 
         return leafs;
@@ -152,17 +152,17 @@ private:
         for (auto &k : keys) {
             auto it = node->children.find(k);
             if (it == node->children.end()) {
-                if (create) it = node->children.emplace(k, PrefixNode{node, k}).first;
+                if (create) it = node->children.emplace(k, new PrefixNode{node, k}).first;
                 else return nullptr;
             }
-            node = &it->second;
+            node = it->second;
         }
         return node;
     }
 
     PrefixNode *const parent;
     const Key key;
-    std::map<Key, PrefixNode> children;
+    std::map<Key, PrefixNode*> children;
     Value *data;
     size_t num_leafs;
 
